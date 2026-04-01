@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LabOS — Apple-Quality Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --text-2xl: clamp(2rem, 1.2rem + 2.5vw, 3.5rem);
+      --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem; --space-5: 1.25rem;
+      --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
+      --space-20: 5rem; --space-24: 6rem;
+      --radius-sm: .5rem; --radius-md: .8rem; --radius-lg: 1.2rem; --radius-xl: 1.8rem; --radius-full: 9999px;
+      --color-bg: #f5f5f7;
+      --color-surface: rgba(255,255,255,0.72);
+      --color-surface-2: rgba(255,255,255,0.9);
+      --color-surface-offset: #ececf1;
+      --color-border: rgba(15,23,42,0.09);
+      --color-divider: rgba(15,23,42,0.08);
+      --color-text: #0f172a;
+      --color-text-muted: #5b6474;
+      --color-text-faint: #8c94a3;
+      --color-primary: #0a84ff;
+      --color-primary-2: #64d2ff;
+      --color-success: #30d158;
+      --color-warning: #ff9f0a;
+      --color-danger: #ff453a;
+      --color-violet: #7c4dff;
+      --shadow-sm: 0 8px 24px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 18px 50px rgba(15, 23, 42, 0.09);
+      --shadow-lg: 0 30px 80px rgba(15, 23, 42, 0.12);
+      --glass-blur: blur(22px);
+      --font-display: 'Instrument Serif', Georgia, serif;
+      --font-body: 'Inter', sans-serif;
+    }
+    [data-theme="dark"] {
+      --color-bg: #000000;
+      --color-surface: rgba(22,22,24,0.72);
+      --color-surface-2: rgba(28,28,31,0.92);
+      --color-surface-offset: #101114;
+      --color-border: rgba(255,255,255,0.08);
+      --color-divider: rgba(255,255,255,0.07);
+      --color-text: #f5f5f7;
+      --color-text-muted: #a1a1aa;
+      --color-text-faint: #71717a;
+      --color-primary: #0a84ff;
+      --color-primary-2: #64d2ff;
+      --color-success: #32d74b;
+      --color-warning: #ffd60a;
+      --color-danger: #ff453a;
+      --color-violet: #bf5af2;
+      --shadow-sm: 0 8px 24px rgba(0,0,0,0.22);
+      --shadow-md: 0 18px 50px rgba(0,0,0,0.3);
+      --shadow-lg: 0 30px 80px rgba(0,0,0,0.44);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(10,132,255,0.18), transparent 28%),
+        radial-gradient(circle at 85% 0%, rgba(191,90,242,0.16), transparent 22%),
+        radial-gradient(circle at 55% 100%, rgba(100,210,255,0.12), transparent 24%),
+        var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    .shell { display: grid; grid-template-columns: 320px 1fr; min-height: 100vh; }
+    .sidebar {
+      position: sticky; top: 0; height: 100vh; padding: var(--space-8);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      border-right: 1px solid var(--color-divider);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+    }
+    .brand {
+      display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+      margin-bottom: var(--space-10);
+    }
+    .brand-mark {
+      width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center;
+      background: linear-gradient(135deg, rgba(10,132,255,0.95), rgba(100,210,255,0.9));
+      box-shadow: 0 14px 40px rgba(10,132,255,0.28);
+      color: white; font-weight: 800; letter-spacing: -0.04em;
+    }
+    .brand-copy small, .eyebrow, .muted { color: var(--color-text-muted); }
+    .brand-copy strong { display: block; font-size: var(--text-lg); letter-spacing: -0.03em; }
+    .theme-toggle {
+      width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--color-border);
+      background: var(--color-surface); color: var(--color-text);
+      display: grid; place-items: center; cursor: pointer; backdrop-filter: var(--glass-blur);
+    }
+    .nav-section { margin-top: var(--space-8); }
+    .nav-label {
+      font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .16em; color: var(--color-text-faint);
+      margin-bottom: var(--space-4);
+    }
+    .nav-list { display: grid; gap: var(--space-2); }
+    .nav-link {
+      display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+      padding: .9rem 1rem; border-radius: 1rem; color: var(--color-text-muted);
+      background: transparent; border: 1px solid transparent; transition: .25s ease;
+    }
+    .nav-link:hover, .nav-link.active {
+      color: var(--color-text);
+      background: color-mix(in srgb, var(--color-surface-2) 74%, transparent);
+      border-color: var(--color-border);
+      transform: translateX(3px);
+    }
+    .nav-index {
+      width: 26px; height: 26px; border-radius: 999px; display: grid; place-items: center;
+      background: rgba(255,255,255,0.05); font-size: 12px;
+    }
+    .sidebar-footer {
+      position: absolute; left: var(--space-8); right: var(--space-8); bottom: var(--space-8);
+      padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-xl);
+      background: var(--color-surface); backdrop-filter: var(--glass-blur);
+    }
+    .main { padding: var(--space-8); }
+    .hero {
+      position: relative; overflow: hidden; padding: clamp(2rem, 5vw, 4rem); border-radius: 2rem;
+      border: 1px solid var(--color-border); background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.02));
+      box-shadow: var(--shadow-lg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+      min-height: 360px; display: grid; grid-template-columns: 1.2fr .8fr; gap: var(--space-8); align-items: end;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.08), transparent 45%),
+        radial-gradient(circle at 78% 20%, rgba(10,132,255,0.24), transparent 25%),
+        radial-gradient(circle at 70% 72%, rgba(191,90,242,0.19), transparent 20%);
+      pointer-events: none;
+    }
+    .hero-content, .hero-visual { position: relative; z-index: 1; }
+    .pill-row, .stat-row, .hero-visual, .grid, .section-grid, .legend, .workflow-rail, .metric-list { display: grid; }
+    .pill-row { grid-auto-flow: column; grid-auto-columns: max-content; gap: .75rem; justify-content: start; }
+    .pill {
+      padding: .6rem .9rem; border-radius: 999px; border: 1px solid var(--color-border);
+      background: rgba(255,255,255,0.06); color: var(--color-text-muted); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .12em;
+    }
+    h1, h2, h3 { margin: 0; line-height: 1.02; letter-spacing: -0.05em; }
+    h1 { font-size: clamp(2.8rem, 7vw, 6rem); font-weight: 800; max-width: 10ch; }
+    h2 { font-size: clamp(2rem, 3vw, 3.2rem); font-weight: 750; margin-bottom: var(--space-4); }
+    h3 { font-size: clamp(1.1rem, 1rem + .6vw, 1.45rem); font-weight: 700; }
+    .serif { font-family: var(--font-display); font-style: italic; font-weight: 400; }
+    .lede { max-width: 62ch; color: var(--color-text-muted); margin-top: var(--space-5); }
+    .stat-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); margin-top: var(--space-8); }
+    .hero-stat, .card, .mini-card, .metric, .surface-card {
+      border: 1px solid var(--color-border); background: var(--color-surface);
+      backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+      box-shadow: var(--shadow-md);
+    }
+    .hero-stat { padding: var(--space-4); border-radius: 1.25rem; }
+    .hero-stat strong { display: block; font-size: 1.6rem; margin-bottom: .2rem; }
+    .hero-visual {
+      align-content: center; gap: var(--space-4); justify-items: end;
+    }
+    .orbital {
+      width: min(420px, 100%); aspect-ratio: 1 / 1; border-radius: 50%; position: relative;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.16), rgba(255,255,255,0.02) 58%, transparent 62%);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .ring, .core, .node { position: absolute; border-radius: 50%; }
+    .ring { inset: 9%; border: 1px dashed rgba(255,255,255,0.14); }
+    .ring.r2 { inset: 23%; }
+    .ring.r3 { inset: 37%; }
+    .core {
+      inset: 41%; display: grid; place-items: center; text-align: center; padding: .8rem;
+      background: linear-gradient(135deg, rgba(10,132,255,0.95), rgba(100,210,255,0.85)); color: white; font-weight: 700;
+      box-shadow: 0 20px 60px rgba(10,132,255,0.35);
+    }
+    .node {
+      width: 88px; height: 88px; display: grid; place-items: center; text-align: center; padding: .6rem;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); font-size: 12px;
+      backdrop-filter: blur(18px);
+    }
+    .n1 { top: 2%; left: 50%; transform: translateX(-50%); }
+    .n2 { top: 28%; right: 2%; }
+    .n3 { bottom: 10%; right: 14%; }
+    .n4 { bottom: 10%; left: 14%; }
+    .n5 { top: 28%; left: 2%; }
+    .content-grid { display: grid; gap: var(--space-6); margin-top: var(--space-8); }
+    .section {
+      padding: clamp(1.5rem, 4vw, 2.25rem); border-radius: 2rem; border: 1px solid var(--color-border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025)); box-shadow: var(--shadow-md);
+      scroll-margin-top: 2rem;
+    }
+    .section-head {
+      display: flex; justify-content: space-between; align-items: end; gap: var(--space-5); margin-bottom: var(--space-6);
+    }
+    .section-copy p { color: var(--color-text-muted); margin: var(--space-3) 0 0; max-width: 68ch; }
+    .section-meta {
+      padding: .9rem 1rem; border-radius: 999px; border: 1px solid var(--color-border); color: var(--color-text-faint);
+      font-size: var(--text-xs); letter-spacing: .12em; text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid { gap: var(--space-5); }
+    .card { padding: var(--space-6); border-radius: 1.5rem; }
+    .card p, .card li, .surface-card p, .metric p { color: var(--color-text-muted); }
+    .list { margin: var(--space-4) 0 0; padding: 0; list-style: none; display: grid; gap: .9rem; }
+    .list li { display: flex; gap: .8rem; align-items: start; }
+    .dot {
+      width: 10px; height: 10px; margin-top: .45rem; border-radius: 999px; flex: 0 0 auto;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-2)); box-shadow: 0 0 18px rgba(10,132,255,0.35);
+    }
+    .api-block, .code-block, .event-block {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      padding: 1rem 1.1rem; border-radius: 1rem; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.07);
+      color: #e8edf6; white-space: pre-wrap; overflow: auto; font-size: 13px; line-height: 1.55;
+    }
+    [data-theme="light"] .api-block,
+    [data-theme="light"] .code-block,
+    [data-theme="light"] .event-block { background: #edf2f8; color: #102039; border-color: rgba(15,23,42,0.08); }
+    .stack { display: grid; gap: var(--space-4); }
+    .surface-card {
+      padding: var(--space-5); border-radius: 1.4rem;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface-2) 88%, transparent), color-mix(in srgb, var(--color-surface) 84%, transparent));
+    }
+    .mini-card { padding: var(--space-4); border-radius: 1.2rem; }
+    .flow-track {
+      display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-5);
+    }
+    .flow-step {
+      padding: 1rem; border-radius: 1.2rem; border: 1px solid var(--color-border); background: rgba(255,255,255,0.05); text-align: center;
+      position: relative; min-height: 106px; display: grid; align-content: center; gap: .35rem;
+    }
+    .flow-step:not(:last-child)::after {
+      content: '→'; position: absolute; right: -11px; top: 50%; transform: translateY(-50%); color: var(--color-text-faint);
+    }
+    .diagram-lane {
+      display: grid; gap: var(--space-4); margin-top: var(--space-5);
+    }
+    .lane-row {
+      display: grid; grid-template-columns: 180px 1fr; gap: var(--space-4); align-items: center;
+    }
+    .lane-title {
+      padding: .95rem 1rem; border-radius: 1rem; background: rgba(255,255,255,0.05); border: 1px solid var(--color-border); font-weight: 600;
+    }
+    .lane-track {
+      padding: 1rem; border-radius: 1rem; border: 1px solid var(--color-border);
+      background: linear-gradient(90deg, rgba(10,132,255,0.09), rgba(191,90,242,0.09));
+      color: var(--color-text-muted);
+    }
+    .state-row {
+      display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-5);
+    }
+    .state {
+      padding: 1rem; border-radius: 999px; text-align: center; border: 1px solid var(--color-border); background: rgba(255,255,255,0.05);
+      font-size: var(--text-sm); font-weight: 600;
+    }
+    .state.active { background: linear-gradient(135deg, rgba(10,132,255,0.16), rgba(100,210,255,0.12)); color: var(--color-text); }
+    .io-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); margin-top: var(--space-5); }
+    .metric-list { gap: var(--space-3); margin-top: var(--space-4); }
+    .metric {
+      padding: 1rem 1.1rem; border-radius: 1rem; display: flex; justify-content: space-between; align-items: center;
+      gap: 1rem;
+    }
+    .metric strong { font-size: 1.25rem; }
+    .split-panel {
+      display: grid; grid-template-columns: 1.1fr .9fr; gap: var(--space-5);
+    }
+    .legend { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
+    .legend-item {
+      padding: .95rem 1rem; border-radius: 1rem; border: 1px solid var(--color-border); background: rgba(255,255,255,0.04); display: flex; gap: .8rem; align-items: center;
+    }
+    .legend-swatch { width: 12px; height: 12px; border-radius: 999px; }
+    .comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
+    .comparison .card:first-child { background: linear-gradient(180deg, rgba(48,209,88,0.1), rgba(255,255,255,0.04)); }
+    .comparison .card:last-child { background: linear-gradient(180deg, rgba(255,159,10,0.1), rgba(255,255,255,0.04)); }
+    .kpi-strip {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); margin-top: var(--space-5);
+    }
+    .kpi { padding: 1rem 1.1rem; border-radius: 1.15rem; border: 1px solid var(--color-border); background: rgba(255,255,255,0.04); }
+    .kpi strong { display: block; font-size: 1.45rem; margin-bottom: .25rem; }
+    .mobile-topbar { display: none; }
+    .footer-note { margin-top: var(--space-8); color: var(--color-text-faint); font-size: var(--text-sm); }
+    @media (max-width: 1100px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { position: fixed; inset: 0 auto 0 0; width: min(88vw, 360px); z-index: 30; transform: translateX(-102%); transition: transform .3s ease; }
+      body.menu-open .sidebar { transform: translateX(0); }
+      .mobile-topbar {
+        display: flex; position: sticky; top: 0; z-index: 20; align-items: center; justify-content: space-between;
+        padding: 1rem 1.1rem; backdrop-filter: blur(18px); background: rgba(0,0,0,0.42); border-bottom: 1px solid var(--color-divider);
+      }
+      [data-theme="light"] .mobile-topbar { background: rgba(245,245,247,0.72); }
+      .main { padding: 0 1rem 1rem; }
+      .hero { grid-template-columns: 1fr; min-height: auto; margin-top: 1rem; }
+      .grid-2, .grid-3, .split-panel, .comparison, .io-grid, .legend, .kpi-strip, .stat-row, .flow-track, .state-row { grid-template-columns: 1fr; }
+      .lane-row { grid-template-columns: 1fr; }
+      .flow-step:not(:last-child)::after { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .nav-link, .theme-toggle, .card, .hero { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-topbar">
+    <button class="theme-toggle" aria-label="Open navigation" id="menuToggle">☰</button>
+    <strong>LabOS Docs</strong>
+    <button class="theme-toggle" aria-label="Toggle theme" data-theme-toggle>◐</button>
+  </div>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div style="display:flex; align-items:center; gap:1rem;">
+          <div class="brand-mark">L</div>
+          <div class="brand-copy">
+            <small>Engineering System</small>
+            <strong>LabOS Docs</strong>
+          </div>
+        </div>
+        <button class="theme-toggle" aria-label="Toggle color theme" data-theme-toggle>◐</button>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Contents</div>
+        <nav class="nav-list" id="navList">
+          <a class="nav-link active" href="#overview"><span>Overview</span><span class="nav-index">01</span></a>
+          <a class="nav-link" href="#architecture"><span>System Architecture</span><span class="nav-index">02</span></a>
+          <a class="nav-link" href="#api"><span>API Contracts</span><span class="nav-index">03</span></a>
+          <a class="nav-link" href="#database"><span>Database Model</span><span class="nav-index">04</span></a>
+          <a class="nav-link" href="#events"><span>Event System</span><span class="nav-index">05</span></a>
+          <a class="nav-link" href="#workflow"><span>Workflow Engine</span><span class="nav-index">06</span></a>
+          <a class="nav-link" href="#integration"><span>Instrument Integration</span><span class="nav-index">07</span></a>
+          <a class="nav-link" href="#ai"><span>AI Layer</span><span class="nav-index">08</span></a>
+          <a class="nav-link" href="#deployment"><span>Deployment</span><span class="nav-index">09</span></a>
+          <a class="nav-link" href="#mvp"><span>MVP Scope</span><span class="nav-index">10</span></a>
+        </nav>
+      </div>
+
+     
+    </aside>
+
+    <main class="main">
+      <section class="hero" id="overview">
+        <div class="hero-content">
+          <div class="pill-row">
+            <span class="pill">Clinical Platform</span>
+            <span class="pill">Architecture</span>
+            <span class="pill">MVP to Scale</span>
+          </div>
+          <div style="margin-top:1.35rem;" class="eyebrow">LabOS · Full engineering architecture</div>
+          <h1>Designed for <span class="serif">clarity</span>, scale, and trust.</h1>
+          <p class="lede">A premium system blueprint for laboratory operations, spanning patient intake, order lifecycle, machine connectivity, reporting, and future AI-driven automation.</p>
+          <div class="stat-row">
+            <div class="hero-stat"><strong>9</strong><span class="muted">Core architecture domains</span></div>
+            <div class="hero-stat"><strong>MVP+</strong><span class="muted">Monolith now, service-ready later</span></div>
+            <div class="hero-stat"><strong>Async</strong><span class="muted">Workflow-first with event evolution</span></div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="orbital" aria-hidden="true">
+            <div class="ring"></div>
+            <div class="ring r2"></div>
+            <div class="ring r3"></div>
+            <div class="core">LabOS<br>Core</div>
+            <div class="node n1">Clients</div>
+            <div class="node n2">Services</div>
+            <div class="node n3">Data</div>
+            <div class="node n4">AI</div>
+            <div class="node n5">Hospitals</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="content-grid">
+        <section class="section" id="architecture">
+          <div class="section-head">
+            <div class="section-copy">
+              <div class="eyebrow">01 · Core topology</div>
+              <h2>System architecture</h2>
+              <p>The platform starts as a modular monolith for delivery speed, but its boundaries already align with future event-driven service extraction.</p>
+            </div>
+            <div class="section-meta">Platform map</div>
+          </div>
+
+          <div class="split-panel">
+            <div class="card">
+              <h3>Operational flow</h3>
+              <div class="diagram-lane">
+                <div class="lane-row"><div class="lane-title">Clients</div><div class="lane-track">Web and mobile experiences for patients, operators, technicians, and administrators</div></div>
+                <div class="lane-row"><div class="lane-title">Gateway</div><div class="lane-track">Authentication, rate control, tenancy awareness, and route entry</div></div>
+                <div class="lane-row"><div class="lane-title">Services</div><div class="lane-track">Patients, orders, samples, results, billing, reporting, and operational rules</div></div>
+                <div class="lane-row"><div class="lane-title">Data + AI</div><div class="lane-track">Postgres, Redis, object storage, event streams, and model-driven decisioning</div></div>
+              </div>
+            </div>
+            <div class="stack">
+              <div class="surface-card">
+                <h3>Design principles</h3>
+                <ul class="list">
+                  <li><span class="dot"></span><span>Modular monolith for MVP simplicity.</span></li>
+                  <li><span class="dot"></span><span>Service boundaries preserved for future extraction.</span></li>
+                  <li><span class="dot"></span><span>Async processing where lab flow benefits from eventual consistency.</span></li>
+                </ul>
+              </div>
+              <div class="surface-card">
+                <h3>Architecture stance</h3>
+                <p>Keep synchronous APIs for operator-critical workflows, and introduce events only where lifecycle transitions, reporting, and integrations create real separation value.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="api">
+          <div class="section-head">
+            <div class="section-copy">
+              <div class="eyebrow">02 · Interface contracts</div>
+              <h2>API contracts</h2>
+              <p>APIs are framed as stable product surfaces: explicit payloads, idempotent mutations, tenant isolation, and security as baseline behavior.</p>
+            </div>
+            <div class="section-meta">REST surface</div>
+          </div>
+
+          <div class="grid grid-2">
+            <div class="card stack">
+              <div>
+                <div class="eyebrow">Create order</div>
+                <div class="api-block">POST /api/v1/orders
+
+Request:
+{
+  "patient_id": "uuid",
+  "tests": ["cbc"]
+}
+
+Response:
+{
+  "order_id": "uuid",
+  "status": "CREATED"
+}</div>
+              </div>
+              <div class="mini-card">
+                <h3>Contract intent</h3>
+                <p>A creation request should immediately return a canonical identifier and durable lifecycle entry state.</p>
+              </div>
+            </div>
+
+            <div class="card stack">
+              <div>
+                <div class="eyebrow">Submit result</div>
+                <div class="api-block">POST /api/v1/results
+
+{
+  "order_test_id": "uuid",
+  "values": [
+    { "parameter": "HB", "value": 13.5 }
+  ]
+}</div>
+              </div>
+              <div class="surface-card">
+                <h3>Rules</h3>
+                <ul class="list">
+                  <li><span class="dot"></span><span>Idempotency for POST operations.</span></li>
+                  <li><span class="dot"></span><span>JWT-based authentication and claims-driven access.</span></li>
+                  <li><span class="dot"></span><span>Strict tenant boundary enforcement at every resource edge.</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="database">
+          <div class="section-head">
+            <div class="section-copy">
+              <div class="eyebrow">03 · Persistence strategy</div>
+              <h2>Database model</h2>
+              <p>The schema centers on traceability: every sample, test, and reported value should remain auditable across tenant, operator, and machine context.</p>
+            </div>
+            <div class="section-meta">Relational backbone</div>
+          </div>
+
+          <div class="grid grid-2">
+            <div class="card">
+              <h3>Entity lineage</h3>
+              <div class="flow-track">
+                <div class="flow-step"><strong>Patient</strong><span class="muted">Identity and tenancy</span></div>
+                <div class="flow-step"><strong>Order</strong><span class="muted">Requested diagnostics</span></div>
+                <div class="flow-step"><strong>Order Test</strong><span class="muted">Granular execution unit</span></div>
+                <div class="flow-step"><strong>Result</strong><span class="muted">Verified output object</span></div>
+                <div class="flow-step"><strong>Values</strong><span class="muted">Parameter-level details</span></div>
+              </div>
+            </div>
+            <div class="card stack">
+              <div class="code-block">patients(id, name, dob, tenant_id)
+orders(id, patient_id, status)
+samples(id, order_id, barcode)
+results(id, order_test_id)
+result_values(id, result_id, value)</div>
+              <div class="legend">
+                <div class="legend-item"><span class="legend-swatch" style="background:var(--color-primary);"></span><span>Partition large result tables</span></div>
+                <div class="legend-item"><span class="legend-swatch" style="background:var(--color-violet);"></span><span>Use JSONB for parameter flexibility</span></div>
+                <div class="legend-item"><span class="legend-swatch" style="background:var(--color-success);"></span><span>Audit every critical mutation</span></div>
+                <div class="legend-item"><span class="legend-swatch" style="background:var(--color-warning);"></span><span>Index by tenant and lifecycle</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="events">
+          <div class="section-head">
+            <div class="section-copy">
+              <div class="eyebrow">04 · Async communication</div>
+              <h2>Event system</h2>
+              <p>Events decouple operational handoffs and allow reporting, workflow progression, and downstream consumers to evolve without rewriting core transaction flows.</p>
+            </div>
+            <div class="section-meta">Kafka-ready</div>
+          </div>
+
+          <div class="grid grid-2">
+            <div class="card">
+              <h3>Service choreography</h3>
+              <div class="diagram-lane">
+                <div class="lane-row"><div class="lane-title">Order Service</div><div class="lane-track">Publishes creation and status updates to sample orchestration</div></div>
+                <div class="lane-row"><div class="lane-title">Sample Service</div><div class="lane-track">Pushes sample lifecycle state to workflow evaluation</div></div>
+                <div class="lane-row"><div class="lane-title">Result Service</div><div class="lane-track">Emits validated result events to AI, reports, and notifications</div></div>
+              </div>
+            </div>
+            <div class="stack">
+              <div class="surface-card">
+                <h3>Event envelope</h3>
+                <div class="event-block">{
+  "event_type": "result.received",
+  "sample_id": "123",
+  "values": [...]
+}</div>
+              </div>
+              <div class="surface-card">
+                <h3>Topics</h3>
+                <ul class="list">
+                  <li><span class="dot"></span><span>orders.events</span></li>
+                  <li><span class="dot"></span><span>samples.events</span></li>
+                  <li><span class="dot"></span><span>results.events</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="workflow">
+          <div class="section-head">
+            <div class="section-copy">
+              <div class="eyebrow">05 · Lab state machine</div>
+              <h2>Workflow engine</h2>
+              <p>Workflow logic translates raw status changes into governed operational movement, exception handling, and escalation policy.</p>
+            </div>
+            <div class="section-meta">Rule execution</div>
+          </div>
+
+          <div class="card">
+            <h3>Lifecycle states</h3>
+            <div class="state-row">
+              <div class="state">Collected</div>
+              <div class="state">Received</div>
+              <div class="state active">Processing</div>
+              <div class="state">Validated</div>
+              <div class="state">Reported</div>
+            </div>
+          </div>
+
+          <div class="grid grid-2" style="margin-top:1.25rem;">
+            <div class="surface-card">
+              <h3>Execution flow</h3>
+              <ul class="list">
+                <li><span class="dot"></span><span>Receive domain event.</span></li>
+                <li><span class="dot"></span><span>Evaluate conditions and business rules.</span></li>
+                <li><span class="dot"></span><span>Advance to the next state when constraints pass.</span></li>
+                <li><span class="dot"></span><span>Trigger actions such as review, alerting, or reporting.</span></li>
+              </ul>
+            </div>
+            <div class="surface-card">
+              <h3>Critical rule example</h3>
+              <div class="code-block">IF hb &lt; 7 → flag critical → require doctor review</div>
+              <p style="margin-top:1rem;">This is where operational policy becomes programmable, traceable, and clinically enforceable.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="integration">
+          <div class="section-head">
+            <div class="section-copy">
+              <div class="eyebrow">06 · Machine connectivity</div>
+              <h2>Instrument integration</h2>
+              <p>The ingestion path should normalize device-specific payloads into a stable internal event model, independent of machine vendor quirks.</p>
+            </div>
+            <div class="section-meta">ASTM + HL7</div>
+          </div>
+
+          <div class="io-grid">
+            <div class="card"><h3>Transport</h3><p>Machine → TCP → parser</p></div>
+            <div class="card"><h3>Normalization</h3><p>Canonical schemas, unit consistency, and parameter mapping.</p></div>
+            <div class="card"><h3>Emission</h3><p>Mapped records become internal events for workflow and reporting.</p></div>
+          </div>
+
+          <div class="grid grid-2" style="margin-top:1.25rem;">
+            <div class="surface-card">
+              <div class="eyebrow">ASTM example</div>
+              <div class="code-block">&lt;STX&gt;H|...
+P|...
+O|...
+R|...
+&lt;ETX&gt;</div>
+            </div>
+            <div class="surface-card">
+              <div class="eyebrow">HL7 example</div>
+              <div class="code-block">MSH|^~\&amp;
+PID|...
+OBR|...
+OBX|...</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="ai">
+          <div class="section-head">
+            <div class="section-copy">
+              <div class="eyebrow">07 · Intelligence layer</div>
+              <h2>AI layer</h2>
+              <p>The AI tier should sit downstream of trusted operational data, consuming events and features rather than interfering with transactional correctness.</p>
+            </div>
+            <div class="section-meta">Decision support</div>
+          </div>
+
+          <div class="split-panel">
+            <div class="card">
+              <h3>Pipeline</h3>
+              <div class="diagram-lane">
+                <div class="lane-row"><div class="lane-title">Ingestion</div><div class="lane-track">Kafka events feed a feature-ready layer</div></div>
+                <div class="lane-row"><div class="lane-title">Modeling</div><div class="lane-track">Anomaly, diagnosis, report, and turnaround models</div></div>
+                <div class="lane-row"><div class="lane-title">Activation</div><div class="lane-track">Predictions feed workflow, alerts, and clinician-facing surfaces</div></div>
+              </div>
+            </div>
+            <div class="stack">
+              <div class="surface-card">
+                <h3>Capabilities</h3>
+                <div class="kpi-strip">
+                  <div class="kpi"><strong>Anomaly</strong><span class="muted">Detection</span></div>
+                  <div class="kpi"><strong>Dx</strong><span class="muted">Prediction</span></div>
+                  <div class="kpi"><strong>LLM</strong><span class="muted">Report generation</span></div>
+                  <div class="kpi"><strong>TAT</strong><span class="muted">Forecasting</span></div>
+                </div>
+              </div>
+              <div class="surface-card">
+                <h3>Example output</h3>
+                <div class="code-block">Input: HB = 7
+Output: "Critical anemia detected"</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="deployment">
+          <div class="section-head">
+            <div class="section-copy">
+              <div class="eyebrow">08 · Infrastructure plane</div>
+              <h2>Deployment</h2>
+              <p>The deployment path supports scale, resilience, and controlled evolution from MVP workloads toward fully distributed infrastructure.</p>
+            </div>
+            <div class="section-meta">Cloud target</div>
+          </div>
+
+          <div class="card">
+            <h3>Runtime topology</h3>
+            <div class="diagram-lane">
+              <div class="lane-row"><div class="lane-title">Ingress</div><div class="lane-track">Internet → Load Balancer → Kubernetes entrypoint</div></div>
+              <div class="lane-row"><div class="lane-title">Compute</div><div class="lane-track">Containerized services orchestrated in EKS</div></div>
+              <div class="lane-row"><div class="lane-title">Streaming</div><div class="lane-track">Kafka through MSK when event scaling becomes necessary</div></div>
+              <div class="lane-row"><div class="lane-title">State</div><div class="lane-track">RDS Postgres, Redis cache, and S3-compatible report storage</div></div>
+            </div>
+          </div>
+
+          <div class="metric-list">
+            <div class="metric"><span>Kubernetes</span><strong>EKS</strong></div>
+            <div class="metric"><span>Kafka</span><strong>MSK</strong></div>
+            <div class="metric"><span>Postgres</span><strong>RDS</strong></div>
+            <div class="metric"><span>Cache</span><strong>Redis</strong></div>
+          </div>
+        </section>
+
+        <section class="section" id="mvp">
+          <div class="section-head">
+            <div class="section-copy">
+              <div class="eyebrow">09 · Delivery scope</div>
+              <h2>MVP scope</h2>
+              <p>The first release should optimize for operational usefulness, low complexity, and short feedback loops. Advanced architecture should stay visible but intentionally deferred.</p>
+            </div>
+            <div class="section-meta">Build now vs later</div>
+          </div>
+
+          <div class="comparison">
+            <div class="card">
+              <h3>Build</h3>
+              <ul class="list">
+                <li><span class="dot"></span><span>Patient management</span></li>
+                <li><span class="dot"></span><span>Order lifecycle</span></li>
+                <li><span class="dot"></span><span>Sample tracking</span></li>
+                <li><span class="dot"></span><span>Manual result entry</span></li>
+                <li><span class="dot"></span><span>Reports</span></li>
+                <li><span class="dot"></span><span>Billing</span></li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Exclude</h3>
+              <ul class="list">
+                <li><span class="dot"></span><span>Kafka event backbone</span></li>
+                <li><span class="dot"></span><span>AI decisioning</span></li>
+                <li><span class="dot"></span><span>Full workflow engine</span></li>
+                <li><span class="dot"></span><span>Machine integration framework</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <p class="footer-note">This version is optimized for founder demos, architecture reviews, and executive storytelling while keeping the underlying engineering intent intact.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const html = document.documentElement;
+    const toggles = document.querySelectorAll('[data-theme-toggle]');
+    let theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    html.setAttribute('data-theme', theme);
+    toggles.forEach(btn => btn.addEventListener('click', () => {
+      theme = theme === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', theme);
+    }));
+
+    const menuToggle = document.getElementById('menuToggle');
+    if (menuToggle) menuToggle.addEventListener('click', () => document.body.classList.toggle('menu-open'));
+
+    const links = [...document.querySelectorAll('.nav-link')];
+    const sections = links.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        const id = '#' + entry.target.id;
+        const link = links.find(l => l.getAttribute('href') === id);
+        if (entry.isIntersecting) {
+          links.forEach(l => l.classList.remove('active'));
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-35% 0px -45% 0px', threshold: 0.01 });
+    sections.forEach(section => observer.observe(section));
+
+    links.forEach(link => link.addEventListener('click', () => {
+      document.body.classList.remove('menu-open');
+    }));
+  </script>
+</body>
+</html>
